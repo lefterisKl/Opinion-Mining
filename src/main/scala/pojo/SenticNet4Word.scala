@@ -4,8 +4,8 @@ object Polarity extends Enumeration {
   val Positive, Negative = Value
 }
 
-class SenticNet4Word(val text: String, val pleasantness: Float, val attention: Float,
-                     val sensitivity: Float, val aptitude: Float, val moodTags: List[String],
+case class SenticNet4Word(val text: String, val pleasantness: Float, val attention: Float,
+                     val sensitivity: Float, val aptitude: Float, val moodTags: Seq[String],
                      val polarity: Polarity.Value, val intensity: Float) {
   //
 
