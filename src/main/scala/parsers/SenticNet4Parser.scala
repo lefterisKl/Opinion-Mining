@@ -1,6 +1,6 @@
 package parsers
 
-import pojo.{Polarity, SenticNet4Word}
+import pojo.SenticNet4Word
 
 import scala.xml.XML
 
@@ -17,14 +17,17 @@ class SenticNet4Parser {
       val attention = (desc \ "attention").text.toFloat
       val sensitivity = (desc \ "sensitivity").text.toFloat
       val aptitude = (desc \ "aptitude").text.toFloat
-      //TODO : den douleuei. kane split me regex
+      //Result string = "#moodtag1#moodtag2"
       val moodtags = (desc \ "moodtag").text
+      //Regex to split result mood string
+      val pattern ="""([#][^#]+)([#][^#]+)""".r
+      val moodtagsList = pattern.findAllIn(moodtags).matchData.map(md => md.subgroups).flatten.toList
 
       //TODO : ftiakse parse string to enum
       val polarity = (desc \ "polarity").text
       val intensity = (desc \ "intensity").text.toFloat
       //
-      SenticNet4Word(text, pleasantness, attention, sensitivity, aptitude, null, null, intensity)
+      SenticNet4Word(text, pleasantness, attention, sensitivity, aptitude, moodtagsList, null, intensity)
     }
     senticNet4Words
   }
