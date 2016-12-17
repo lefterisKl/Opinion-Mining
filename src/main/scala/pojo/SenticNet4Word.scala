@@ -1,12 +1,12 @@
 package pojo
 
 object Polarity extends Enumeration {
-  val Positive, Negative = Value
+  val positive, negative = Value
 }
 
-case class SenticNet4Word(val text: String, val pleasantness: Float, val attention: Float,
-                     val sensitivity: Float, val aptitude: Float, val moodTags: Seq[String],
-                     val polarity: Polarity.Value, val intensity: Float) {
+case class SenticNet4Word(text: String, pleasantness: Float, attention: Float,
+                          sensitivity: Float, aptitude: Float, moodTags: Seq[String],
+                          polarity: Polarity.Value, intensity: Float) {
   //
 
   //Prints all fields and field values
