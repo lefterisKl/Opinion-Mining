@@ -4,12 +4,14 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+import dictionarybuilder.DictionaryBuilder
+
 
 
 
 object OpinionMining {
 
-
+	
 	
 	/*example
 	input: RDD["One    two. three, four   five-six"]
@@ -31,10 +33,12 @@ object OpinionMining {
 
 		Logger.getLogger("org").setLevel(Level.ERROR)
 		Logger.getLogger("akka").setLevel(Level.ERROR)
-
+		
+		
 		
 		val conf = new SparkConf().setAppName("Opinion-Mining")
 		val sc = new SparkContext(conf)
+		
 
 		val trainPos = sc.textFile("hdfs://localhost:9000/dataSubset/train/pos")
 		val trainNeg = sc.textFile("hdfs://localhost:9000/dataSubset/train/neg")
@@ -44,6 +48,7 @@ object OpinionMining {
 		
 		println(trainPosFreq.take(2).deep.mkString("\n\n"))
 		
+		println("SUCCESS")
 
 	}
 }
