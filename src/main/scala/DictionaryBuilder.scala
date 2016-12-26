@@ -3,7 +3,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
 //import org.apache.spark.mllib.feature.Stemmer
-import org.apache.spark.sql._
+//import org.apache.spark.sql._
 
 
 
@@ -47,10 +47,10 @@ object DictionaryBuilder{
 		//Intersect to find all terms
 		val terms = trainPosTerms.intersection(trainNegTerms).intersection(testTerms)
 		
-		val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+	
 		/*
 		//Stem the terms
-		
+		val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 		val termsDF = sqlContext.createDataFrame(terms).toDF("word")
 		val stemmed = new Stemmer().setInputCol("word").setOutputCol("stemmed").setLanguage("English").transform(termsDF)
 		val stemmedTerms: org.apache.spark.rdd.RDD[String] = stemmed.select("stemmed").map(x=>x.toString())
