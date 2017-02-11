@@ -1,0 +1,18 @@
+//Scriptaki gia na kovoume lekseis mesw senticnet
+val parser = new SenticNet4Parser()
+val senticWords = parser.unmarshallXml()
+val source = scala.io.Source.fromFile("C:\\Users\\Alex\\Documents\\Opinion-Mining\\stemPairsSorted.txt")
+val lines = try source.mkString finally source.close()
+
+//Edw prwta filter an thes na kopseis words mesw parametrwn kai meta map sto .text
+val senticWordsText = senticWords.map( sw => sw.text)
+val linesArray = lines.split("\r\n")
+
+case class WordPair(first: String, second: String)
+val wordPairArray = linesArray.map(tuple => WordPair(tuple.split(" ")(0),tuple.split(" ")(1)));
+val filterOut = wordPairArray.filter(wpa => senticWordsText.contains(wpa.first))
+
+val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("C:\\Users\\Alex\\Desktop\\senticOut.txt")))
+
+for (x <- filterOut.toList) {writer.write(x.first + " " + x.second +  "\n")}
+writer.close()

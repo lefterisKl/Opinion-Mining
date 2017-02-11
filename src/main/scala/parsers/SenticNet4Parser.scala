@@ -8,8 +8,7 @@ import scala.xml.XML
 class SenticNet4Parser {
 
   def unmarshallXml(): Seq[SenticNet4Word] = {
-    //TODO : prin to merge, vale to path san parametro h valto na to pernei apo http
-    val rdf = XML.loadFile("C:\\Users\\Alexei\\Desktop\\singleWord.rdf.xml")
+    val rdf = XML.loadFile("C:\\Users\\Alex\\Desktop\\senticnet4.rdf.xml")
 
     val senticNet4Words = (rdf \ "Description").map { desc =>
       val text = (desc \ "text").text
