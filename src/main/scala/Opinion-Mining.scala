@@ -83,6 +83,20 @@ object OpinionMining {
 		val numTest = test.count()
 		1.0*correct/numTest
 	}
+
+
+	type classificationModel = org.apache.spark.mllib.classification.ClassificationModel
+	
+	def vote(score:Double,limit:Double)={ if(score > limit) 1.0 else 0.0 }	
+
+	def hybrid(m1: classificationModel, m2: classificationModel, m3:classificationModel, test:org.apache.spark.rdd.RDD[LabeledPoint]):Double =
+	{
+				val correct = test.map { point => val score = m1.predict(point.features) +m2.predict(point.features) +m3.predict(point.features)
+																	
+																	(vote(score,1) == point.label) }.filter(x=>(x==true)).count()
+				val numTest = test.count()
+				1.0*correct/numTest
+	}
 	
 
 	
@@ -138,8 +152,8 @@ object OpinionMining {
 
 		//Logistic Regression
 		
-		//val lr_model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training)
-		//println(evaluateAccurasy(lr_model,testing))
+		val lr_model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training)
+		println(evaluateAccurasy(lr_model,testing))
 
 
 		
@@ -155,8 +169,11 @@ object OpinionMining {
 		//}
 
 		//Naive Bayes
-		//val nb_model = NaiveBayes.train(training, lambda=1.0, modelType = "multinomial")
-		//println(evaluateAccurasy(nb_model, testing))
+		val nb_model = NaiveBayes.train(training, lambda=1.0, modelType = "multinomial")
+		println(evaluateAccurasy(nb_model, testing))
+
+		println("Hybrid")
+		println( hybrid(nb_model,lr_model,svm_model,testing))
 
 
 		//println(trainPosVectors.take(2).deep.mkString("\n\n"))
