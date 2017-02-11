@@ -23,6 +23,8 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.spark.sql.types.StructField
 
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+
 
 
 
@@ -31,11 +33,10 @@ import org.apache.spark.sql.types.StructField
 object OpinionMining {
 
 	
-	
+	//The review preprocessing chain	
 	
 	def processReviews(reviews: org.apache.spark.rdd.RDD[String]):org.apache.spark.rdd.RDD[Array[String]] = 
 	{ reviews.map(x=>x.replaceAll("""[\p{Punct}]"""," ").replaceAll("""\s+"""," ").toLowerCase.split(" ")) }
-
 
 	
 	def getTermFrequencies(reviews: org.apache.spark.rdd.RDD[Array[String]]):org.apache.spark.rdd.RDD[Array[(String, Int)]] = 
@@ -44,12 +45,38 @@ object OpinionMining {
 	def filterWithDictionary(reviews: org.apache.spark.rdd.RDD[Array[String]],dictionary: scala.collection.Map[String,String])
 	:org.apache.spark.rdd.RDD[Array[String]] 
 	={reviews.map(termList => termList.map( term => dictionary.getOrElse(term,"NULL")).filter(term=> term!="NULL")) }
+
+	//Four different TF definitions (raw,normalized,double normalized, log) to create the vectors
 	
-	def vectorize(reviewTF: Array[(String,Int)], idMap: scala.collection.immutable.Map[String,Int], numTerms: Int ): org.apache.spark.mllib.linalg.Vector =
+	def rawTF(reviewTF: Array[(String,Int)], idMap: scala.collection.immutable.Map[String,Int], numTerms: Int ): org.apache.spark.mllib.linalg.Vector =
 	{
 		 Vectors.sparse(numTerms, reviewTF.map( pair => (idMap(pair._1),pair._2.toDouble) ))
 	}
 
+	def normalizedTF(reviewTF: Array[(String,Int)], idMap: scala.collection.immutable.Map[String,Int], numTerms: Int ):org.apache.spark.mllib.linalg.Vector =
+	{
+		val maxFrequency:Double = reviewTF.map(x=>x._2).reduceLeft(_ max _)
+		Vectors.sparse(numTerms, reviewTF.map( pair => (idMap(pair._1),pair._2.toDouble/maxFrequency) ))
+	}
+
+	def doubleNormalizedTF(reviewTF: Array[(String,Int)], idMap: scala.collection.immutable.Map[String,Int], numTerms: Int ):org.apache.spark.mllib.linalg.Vector =
+	{
+		val maxFrequency:Double = reviewTF.map(x=>x._2).reduceLeft(_ max _)
+		Vectors.sparse(numTerms, reviewTF.map( pair => (idMap(pair._1),pair._2.toDouble/maxFrequency) ))
+	}
+
+	
+
+		def logOrZero(x:Double):Double={ if (x==0) 0 else Math.log(x) }
+
+
+		def logNormalizedTF(reviewTF: Array[(String,Int)], idMap: scala.collection.immutable.Map[String,Int], numTerms: Int ):org.apache.spark.mllib.linalg.Vector =
+	{
+		
+		Vectors.sparse(numTerms, reviewTF.map( pair => (idMap(pair._1), 1 + logOrZero(pair._2.toDouble)) ))
+	}
+	
+	//evaluate accurasy percentage of classification model on a set with known labels
 	def evaluateAccurasy(m:org.apache.spark.mllib.classification.ClassificationModel,test:org.apache.spark.rdd.RDD[LabeledPoint]):Double = {
 		val correct = test.map { point => val score = m.predict(point.features)
 		(score== point.label) }.filter(x=>(x==true)).count()
@@ -78,6 +105,7 @@ object OpinionMining {
 		val test = sc.textFile(args(0) +"/test",4)
 
 		val stemPairMap = sc.textFile(args(1)+"/stemPairsSorted.txt").map(x=>(x.split(" ")(0),x.split(" ")(1))).collectAsMap()
+
 		val termIdMap = stemPairMap.values.toSet.toArray.sorted.zipWithIndex.toMap
 
 		
@@ -91,9 +119,9 @@ object OpinionMining {
 
 
 
-		val trainPosVectors = getTermFrequencies( filterWithDictionary( processReviews(trainPos), spm)).map(x=>vectorize(x,tim,numTerms))
-		val trainNegVectors = getTermFrequencies( filterWithDictionary( processReviews(trainNeg), spm)).map(x=>vectorize(x,tim,numTerms))
-		val testVectors = getTermFrequencies( filterWithDictionary( processReviews(test),spm)).map(x=>vectorize(x,tim,numTerms))
+		val trainPosVectors = getTermFrequencies( filterWithDictionary( processReviews(trainPos), spm)).map(x=>logNormalizedTF(x,tim,numTerms))
+		val trainNegVectors = getTermFrequencies( filterWithDictionary( processReviews(trainNeg), spm)).map(x=>logNormalizedTF(x,tim,numTerms))
+		val testVectors = getTermFrequencies( filterWithDictionary( processReviews(test),spm)).map(x=>rawTF(x,tim,numTerms))
 
 		
 		val labeledVectors = trainPosVectors.map(x=>LabeledPoint(1.0,x)).union(trainNegVectors.map(x=>LabeledPoint(0.0,x))).persist(StorageLevel.MEMORY_AND_DISK)
@@ -104,14 +132,39 @@ object OpinionMining {
 
 
 		//SVM model
-		val numIterations = 100
+		val numIterations = 600
 		val svm_model = SVMWithSGD.train(training, numIterations)
 		println(evaluateAccurasy(svm_model,testing))
+
+		//Logistic Regression
+		
+		//val lr_model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training)
+		//println(evaluateAccurasy(lr_model,testing))
+
+
+		
+ 		//for ( currentLambda <- 0.0 to 4.0 by 0.1) {   
+			//val t1 = System.nanoTime()   
+			//val nb_model = NaiveBayes.train(training, lambda=currentLambda, modelType = "multinomial")
+			//val trainduration = (((System.nanoTime() - t1) / 1000 ) / 60 )    
+			//println(evaluateAccurasy(nb_model, testing))
+			//println("lambda = "+ currentLambda)
+			  			 
+			//println("Train duration = "+ trainduration + " mins")  
+			  
+		//}
+
+		//Naive Bayes
+		//val nb_model = NaiveBayes.train(training, lambda=1.0, modelType = "multinomial")
+		//println(evaluateAccurasy(nb_model, testing))
 
 
 		//println(trainPosVectors.take(2).deep.mkString("\n\n"))
 		println("SUCCESS")
 		
 		
+
+	
+
 	}
 }
