@@ -9,8 +9,7 @@ spark-submit \
 	dataFolder projectFolder 4 mode output
  
 
-#dataFolder projectFolder mode output
-
+#dataFolder projectFolder partitions mode output
 #replace these with
 #	arg0. dataFolder: path to  data directory (should contain /train/pos, /train/neg and /test) 
 #	arg1. projectFolder: path to project folder

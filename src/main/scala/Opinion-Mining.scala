@@ -187,18 +187,18 @@ object OpinionMining {
 			
 				//println("Training Logistic Regression model..")
 				val lr_model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(training)
-				println("Logistic Regression accurasy: " +evaluateAccurasy(lr_model,testing).toString)
+				println("Logistic Regression accuracy: " +evaluateAccurasy(lr_model,testing).toString)
 			
 				println("Training Naive Bayes model..")
 				val nb_model = NaiveBayes.train(training, lambda=1.0, modelType = "multinomial")
-				println("Naive Bayes model accurasy: " + evaluateAccurasy(nb_model, testing).toString)
+				println("Naive Bayes model accuracy: " + evaluateAccurasy(nb_model, testing).toString)
 
 				println("Training SVM model..")
 				val svm_model = SVMWithSGD.train(training, numIterations)
-				println("SVM accurasy:" +evaluateAccurasy(svm_model,testing).toString)
+				println("SVM accuracy:" +evaluateAccurasy(svm_model,testing).toString)
 
 			
-				println("Hybrid model accurasy: " + hybrid(nb_model,lr_model,svm_model,testing).toString)
+				println("Hybrid model accuracy: " + hybrid(nb_model,lr_model,svm_model,testing).toString)
 			
 
 		}
